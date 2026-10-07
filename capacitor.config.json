@@ -1,0 +1,11 @@
+{
+  "appId": "com.vertido.game",
+  "appName": "Vertido",
+  "webDir": "dist",
+  "ios": { "contentInset": "never", "backgroundColor": "#0e1230" },
+  "android": { "backgroundColor": "#0e1230", "allowMixedContent": false },
+  "plugins": {
+    "SplashScreen": { "launchShowDuration": 800, "backgroundColor": "#0e1230", "showSpinner": false },
+    "StatusBar": { "style": "DARK", "backgroundColor": "#0e1230" }
+  }
+}
