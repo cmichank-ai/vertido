@@ -12,7 +12,9 @@ export const DEFAULTS = {
     interstitial_from_level: 10, interstitial_every_levels: 3, interstitial_min_seconds: 120,
     banner_from_level: 16, app_open_from_level: 16, app_open_after_hours: 4, app_open_max_per_day: 2,
     rewarded_hints_per_day: 3, first_interstitial_min_play_seconds: 480,
+    ids: null, // { android: {rewarded, interstitial, banner}, ios: {...} } — IDs reales solo por config del build de tienda
   },
+  iap: { keys: null }, // { ios: "appl_...", android: "goog_..." }
   features: { missions_from_level: 6, shop_from_level: 16, events_from_level: 24, streak_from_level: 3 },
   difficulty: { curve: null }, // null = DEFAULT_CURVE del generador
   events: [],

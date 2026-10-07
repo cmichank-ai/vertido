@@ -12,8 +12,9 @@ import { notifications } from "../platform/notifications.js";
 import { t, detectLang, applyI18n } from "../i18n/i18n.js";
 import { defaultMeta, ensureMissions, onLevelComplete, openDaily, mapChestReward } from "../meta/meta.js";
 import { createScreens } from "./screens.js";
+import { review } from "../platform/review.js";
 
-const APP_VERSION = "0.3.0";
+const APP_VERSION = "0.4.0";
 const SYM = ["●", "▲", "■", "◆", "★", "✚", "▼", "⬟", "✖", "◐"];
 const $ = id => document.getElementById(id);
 const board = $("board");
@@ -41,7 +42,8 @@ async function boot() {
   detectLang(); applyI18n();
   await S.load(); applySettings(); applySkin();
   cfg = await loadConfig(storage, { version: APP_VERSION, country: navigator.language?.split("-")[1], bucket: 0 });
-  await ads.init();
+  ads.configure(cfg.ads.ids); await ads.init(); await iap.init(cfg.iap?.keys);
+  const r0 = await iap.restore(); if (r0.noAds) meta.noAds = true;
   setInterval(() => { if (!document.hidden) playSeconds++; }, 1000);
   document.addEventListener("pointerdown", () => audio.unlock(), { once: true });
   screens = createScreens({ get meta() { return meta; }, get state() { return { level, coins }; }, get cfg() { return cfg; }, addCoins, spendCoins, toast, applySkin, purchase, restore, openDaily: openDailyChest });
@@ -65,12 +67,12 @@ async function openDailyChest(withAd) {
 async function purchase(id) {
   const r = await iap.purchase(id); if (!r.ok) return;
   track("iap_purchase", { product: id });
-  if (id === "no_ads") meta.noAds = true;
+  if (id === "no_ads" || r.noAds) { meta.noAds = true; ads.hideBanner(); }
   if (id === "starter_pack") { meta.starter.bought = true; meta.owned.tubes.push("starter"); meta.equipped.tube = "starter"; applySkin(); await addCoins(800, "starter_pack"); }
   if (id.startsWith("coins_")) await addCoins(+id.split("_")[1], "iap");
   await S.save(); hud();
 }
-async function restore() { const r = await iap.restore(); if (r.noAds) meta.noAds = true; await S.save(); toast(t("done")); }
+async function restore() { const r = await iap.restore(); if (r.noAds) { meta.noAds = true; ads.hideBanner(); } await S.save(); toast(t("done")); }
 async function showOnboardingHand() {
   if (level !== 1 || moves > 0) return;
   onboarding = true; const { move } = await engine.hint(tubes); if (!move || !onboarding) return;
@@ -154,6 +156,8 @@ async function win() {
   ensureMissions(meta, level); onLevelComplete(meta, { hints: hintsUsed, eff });
   level++; const mapChest = mapChestReward(meta, level); coins += mapChest; await S.save();
   if (level === 8 && !notifications.granted) notifications.request();
+  if ((level === 15 || (level > 15 && (level - 15) % 25 === 0)) && (meta.reviews || 0) < 3) { meta.reviews = (meta.reviews || 0) + 1; review.request(); }
+  if (!meta.noAds && level >= cfg.ads.banner_from_level) ads.showBanner();
   notifications.schedule({ streak, titleStreak: t("notifStreak", { n: streak }), titleChest: t("notifChest"), titleMissions: t("notifMissions") });
   $("winMsg").textContent = t("moves", { m: moves, p: par }) + (eff ? " · " + t("effBonus") : "") + (chest ? " · " + t("streakChest", { c: chest }) : "") + (mapChest ? " · " + t("levelChest", { c: mapChest }) : "");
   $("win").classList.add("show"); $("winCoins").dataset.earn = earn;
@@ -165,6 +169,7 @@ async function maybeInterstitial() {
   const a = cfg.ads;
   if (meta.noAds || level < a.interstitial_from_level || playSeconds < a.first_interstitial_min_play_seconds) return;
   if (levelsSinceAd < a.interstitial_every_levels || (Date.now() - lastInterstitialAt) / 1000 < a.interstitial_min_seconds) return;
+  await ads.consent();
   if (await ads.showInterstitial()) { lastInterstitialAt = Date.now(); levelsSinceAd = 0; track("ad_impression", { format: "interstitial", placement: "level_end" }); }
 }
 

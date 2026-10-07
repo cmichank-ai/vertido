@@ -1,6 +1,5 @@
-// Un solo track(); reparte a Firebase (nativo) y a consola en web.
-let fb = null;
-try { fb = globalThis.Capacitor?.Plugins?.FirebaseAnalytics || null; } catch {}
+import { native } from "./native.js";
+const fb = native.FirebaseAnalytics || null;
 const queue = [];
 export function track(event, props = {}) {
   const e = { event, props: { ...props, ts: Date.now() } };
