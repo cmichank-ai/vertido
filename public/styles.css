@@ -79,3 +79,22 @@ header{display:flex;align-items:center;justify-content:space-between;padding:14p
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 .seg.hidden{background:repeating-linear-gradient(45deg,#6b6f9a 0 6px,#5a5e88 6px 12px)}
 .btn.ghost{margin-top:4px}
+
+/* Sprint 1: juice */
+.stream{position:fixed;width:5px;border-radius:3px;pointer-events:none;z-index:4;opacity:.95;animation:streamIn .12s ease-out}
+@keyframes streamIn{from{transform:scaleY(0);transform-origin:top}to{transform:scaleY(1)}}
+.bubble{position:fixed;width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.7);pointer-events:none;z-index:4}
+.flash{position:fixed;border-radius:0 0 22px 22px;background:rgba(255,255,255,.55);pointer-events:none;z-index:6;animation:flashOut .22s ease-out forwards}
+@keyframes flashOut{to{opacity:0}}
+.spark{position:fixed;width:8px;height:8px;border-radius:50%;pointer-events:none;z-index:7}
+.tube{transition:transform .18s ease,border-color .3s}
+/* daltónico: símbolo por color */
+body.cb .seg.on::after{content:attr(data-sym);position:absolute;inset:0;display:grid;place-items:center;font-size:15px;font-weight:900;color:rgba(0,0,0,.55)}
+.seg{position:relative}
+.gear{position:fixed;right:14px;bottom:calc(96px + env(safe-area-inset-bottom,0px));width:38px;height:38px;border-radius:50%;background:var(--panel);display:grid;place-items:center;z-index:3}
+.gear svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2}
+.setrow{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--glass-edge)}
+.setrow:last-of-type{border:0}
+.sw{width:46px;height:26px;border-radius:999px;background:var(--glass-edge);position:relative;transition:background .2s}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .2s}
+.sw.on{background:var(--ok)}.sw.on::after{left:23px}

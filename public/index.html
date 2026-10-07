@@ -21,6 +21,12 @@
 </div>
 <div class="overlay" id="win"><div class="card"><h2>Resuelto</h2><p id="winMsg"></p><span class="big" id="winCoins"></span><button class="btn" id="bDouble">Doblar monedas (ver anuncio)</button><button class="btn ghost" id="bNext">Siguiente nivel</button></div></div>
 <div class="overlay" id="stuckO"><div class="card"><h2>Sin movimientos</h2><p>No hay vertidos válidos.</p><button class="btn" id="bStuckUndo">Deshacer</button><button class="btn" id="bStuckTube">Frasco extra</button><button class="btn ghost" id="bStuckRestart">Reiniciar</button></div></div>
+<button class="gear" id="bGear" aria-label="Ajustes"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+<div class="overlay" id="settings"><div class="card"><h2>Ajustes</h2>
+<div class="setrow"><span>Sonido</span><button class="sw on" id="swSound" aria-label="Sonido"></button></div>
+<div class="setrow"><span>Vibración</span><button class="sw on" id="swHaptic" aria-label="Vibración"></button></div>
+<div class="setrow"><span>Símbolos por color (daltonismo)</span><button class="sw" id="swCB" aria-label="Símbolos por color"></button></div>
+<button class="btn" id="bSetClose">Listo</button></div></div>
 <div class="toast" id="toast"></div>
 <script type="module" src="../src/game/main.js"></script>
 </body>

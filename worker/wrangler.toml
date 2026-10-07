@@ -3,4 +3,4 @@ main = "index.js"
 compatibility_date = "2026-01-01"
 [[kv_namespaces]]
 binding = "CONFIG"
-id = "REPLACE_WITH_KV_ID"
+id = "d43d014645ec4891bc501ed113a45f60"
