@@ -14,19 +14,28 @@
 </header>
 <div id="board" aria-label="Tablero"></div>
 <div class="tools">
-  <button class="tool" id="bUndo"><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Deshacer<span id="undoN">3</span></button>
-  <button class="tool" id="bHint"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.6.6 1 1.3 1 2.5h6c0-1.2.4-1.9 1-2.5A6 6 0 0 0 12 3z"/></svg>Pista<span id="hintN">20</span></button>
-  <button class="tool" id="bTube"><svg viewBox="0 0 24 24"><path d="M8 3h8M9 3v12a3 3 0 0 0 6 0V3"/><path d="M12 8v3M10.5 9.5h3"/></svg>Frasco<span id="tubeN">30</span></button>
-  <button class="tool" id="bRestart"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>Reiniciar<span>gratis</span></button>
+  <button class="tool" id="bUndo"><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg><b data-i18n="undo">Deshacer</b><span id="undoN">3</span></button>
+  <button class="tool" id="bHint"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.6.6 1 1.3 1 2.5h6c0-1.2.4-1.9 1-2.5A6 6 0 0 0 12 3z"/></svg><b data-i18n="hint">Pista</b><span id="hintN">20</span></button>
+  <button class="tool" id="bTube"><svg viewBox="0 0 24 24"><path d="M8 3h8M9 3v12a3 3 0 0 0 6 0V3"/><path d="M12 8v3M10.5 9.5h3"/></svg><b data-i18n="tube">Frasco</b><span id="tubeN">30</span></button>
+  <button class="tool" id="bRestart"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg><b data-i18n="restart">Reiniciar</b><span>gratis</span></button>
 </div>
-<div class="overlay" id="win"><div class="card"><h2>Resuelto</h2><p id="winMsg"></p><span class="big" id="winCoins"></span><button class="btn" id="bDouble">Doblar monedas (ver anuncio)</button><button class="btn ghost" id="bNext">Siguiente nivel</button></div></div>
-<div class="overlay" id="stuckO"><div class="card"><h2>Sin movimientos</h2><p>No hay vertidos válidos.</p><button class="btn" id="bStuckUndo">Deshacer</button><button class="btn" id="bStuckTube">Frasco extra</button><button class="btn ghost" id="bStuckRestart">Reiniciar</button></div></div>
+<div class="overlay" id="win"><div class="card"><h2 data-i18n="solved">Resuelto</h2><p id="winMsg"></p><span class="big" id="winCoins"></span><button class="btn" id="bDouble" data-i18n="double">Doblar monedas (ver anuncio)</button><button class="btn ghost" id="bNext" data-i18n="next">Siguiente nivel</button></div></div>
+<div class="overlay" id="stuckO"><div class="card"><h2 data-i18n="stuck">Sin movimientos</h2><p data-i18n="stuckMsg">No hay vertidos válidos.</p><button class="btn" id="bStuckUndo" data-i18n="undo">Deshacer</button><button class="btn" id="bStuckTube" data-i18n="extraTube">Frasco extra</button><button class="btn ghost" id="bStuckRestart" data-i18n="restart">Reiniciar</button></div></div>
 <button class="gear" id="bGear" aria-label="Ajustes"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
-<div class="overlay" id="settings"><div class="card"><h2>Ajustes</h2>
-<div class="setrow"><span>Sonido</span><button class="sw on" id="swSound" aria-label="Sonido"></button></div>
-<div class="setrow"><span>Vibración</span><button class="sw on" id="swHaptic" aria-label="Vibración"></button></div>
-<div class="setrow"><span>Símbolos por color (daltonismo)</span><button class="sw" id="swCB" aria-label="Símbolos por color"></button></div>
-<button class="btn" id="bSetClose">Listo</button></div></div>
+<div class="overlay" id="settings"><div class="card"><h2 data-i18n="settings">Ajustes</h2>
+<div class="setrow"><span data-i18n="sound">Sonido</span><button class="sw on" id="swSound" aria-label="Sonido"></button></div>
+<div class="setrow"><span data-i18n="vibration">Vibración</span><button class="sw on" id="swHaptic" aria-label="Vibración"></button></div>
+<div class="setrow"><span data-i18n="colorblind">Símbolos por color (daltonismo)</span><button class="sw" id="swCB" aria-label="Símbolos por color"></button></div>
+<button class="btn" id="bSetClose" data-i18n="done">Listo</button></div></div>
+<nav id="nav" hidden>
+  <button data-nav="play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg><span data-i18n="play">Jugar</span></button>
+  <button data-nav="missions"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span data-i18n="missions">Misiones</span><i id="dotM" hidden></i></button>
+  <button data-nav="collection"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg><span data-i18n="collection">Colección</span></button>
+  <button data-nav="shop" id="navShop" hidden><svg viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0"/></svg><span data-i18n="shop">Tienda</span></button>
+  <button data-nav="map"><svg viewBox="0 0 24 24"><path d="M1 6v16l7-4 8 4 7-4V2l-7 4-8-4z"/><path d="M8 2v16M16 6v16"/></svg><span data-i18n="map">Mapa</span></button>
+</nav>
+<div class="overlay" id="screen"><div class="card scard"><div class="shead"><h2></h2><button class="sclose" aria-label="Cerrar">✕</button></div><div class="sbody"></div></div></div>
+<div class="hand" id="hand" hidden>👆</div>
 <div class="toast" id="toast"></div>
 <script type="module" src="../src/game/main.js"></script>
 </body>

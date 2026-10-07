@@ -7,8 +7,13 @@ import { track } from "../platform/analytics.js";
 import { ads } from "../platform/ads.js";
 import { haptics } from "../platform/haptics.js";
 import { audio } from "../platform/audio.js";
+import { iap } from "../platform/iap.js";
+import { notifications } from "../platform/notifications.js";
+import { t, detectLang, applyI18n } from "../i18n/i18n.js";
+import { defaultMeta, ensureMissions, onLevelComplete, openDaily, mapChestReward } from "../meta/meta.js";
+import { createScreens } from "./screens.js";
 
-const APP_VERSION = "0.2.0";
+const APP_VERSION = "0.3.0";
 const SYM = ["●", "▲", "■", "◆", "★", "✚", "▼", "⬟", "✖", "◐"];
 const $ = id => document.getElementById(id);
 const board = $("board");
@@ -17,35 +22,72 @@ const engine = new Engine(globalThis.__VERTIDO_WORKER_URL || new URL("../core/wo
 let cfg, level = 1, coins = 0, streak = 0, playSeconds = 0, lastInterstitialAt = 0, levelsSinceAd = 0, hintAdsToday = 0, hintsUsed = 0;
 let tubes = [], history = [], sel = -1, undos = 3, extraUsed = false, par = 0, moves = 0, hiddenTubes = [], revealed = new Set(), busy = false;
 const settings = { sound: true, haptic: true, cb: false };
+let meta = defaultMeta(); let screens; let onboarding = false;
 const hap = { light: () => settings.haptic && haptics.light(), medium: () => settings.haptic && haptics.medium(), success: () => settings.haptic && haptics.success() };
 
 const S = {
   async load() {
     level = +(await storage.get("vertido.level")) || 1; coins = +(await storage.get("vertido.coins")) || 0; streak = +(await storage.get("vertido.streak")) || 0;
     try { Object.assign(settings, JSON.parse((await storage.get("vertido.settings")) || "{}")); } catch {}
+    try { meta = { ...defaultMeta(), ...JSON.parse((await storage.get("vertido.meta")) || "{}") }; } catch {}
   },
   async save() {
     await storage.set("vertido.level", String(level)); await storage.set("vertido.coins", String(coins)); await storage.set("vertido.streak", String(streak));
-    await storage.set("vertido.settings", JSON.stringify(settings));
+    await storage.set("vertido.settings", JSON.stringify(settings)); await storage.set("vertido.meta", JSON.stringify(meta));
   },
 };
 
 async function boot() {
-  await S.load(); applySettings();
+  detectLang(); applyI18n();
+  await S.load(); applySettings(); applySkin();
   cfg = await loadConfig(storage, { version: APP_VERSION, country: navigator.language?.split("-")[1], bucket: 0 });
   await ads.init();
   setInterval(() => { if (!document.hidden) playSeconds++; }, 1000);
   document.addEventListener("pointerdown", () => audio.unlock(), { once: true });
+  screens = createScreens({ get meta() { return meta; }, get state() { return { level, coins }; }, get cfg() { return cfg; }, addCoins, spendCoins, toast, applySkin, purchase, restore, openDaily: openDailyChest });
+  document.querySelectorAll("[data-nav]").forEach(b => b.onclick = () => { const n = b.dataset.nav; if (n === "play") screens.hide(); else screens.show(n); document.querySelectorAll("[data-nav]").forEach(x => x.classList.toggle("on", x === b)); });
   await load();
+  if (level >= cfg.features.missions_from_level && screens.dailyAvailable()) screens.show("daily");
 }
+
+function updateNav() {
+  const nav = $("nav"); nav.hidden = level < cfg.features.missions_from_level; $("navShop").hidden = level < cfg.features.shop_from_level;
+  if (!nav.hidden) { const items = ensureMissions(meta, level); $("dotM").hidden = !items.some(m => !m.claimed && m.p >= m.n); }
+}
+function applySkin() { document.body.dataset.tube = meta.equipped.tube; document.body.dataset.bg = meta.equipped.bg; }
+async function addCoins(n, source) { coins += n; track("coins_earn", { source, amount: n, balance: coins }); audio.chest(); await S.save(); hud(); }
+async function spendCoins(n, source) { coins -= n; track("coins_spend", { source, amount: n, balance: coins }); await S.save(); hud(); }
+async function openDailyChest(withAd) {
+  let doubled = false;
+  if (withAd) { const r = await ads.showRewarded("daily_chest"); doubled = !!r.rewarded; if (doubled) track("ad_reward", { placement: "daily_chest" }); }
+  const got = openDaily(meta, cfg.economy.daily_chest, doubled); if (got) { track("chest_open", { kind: "daily", amount: got }); await addCoins(got, "daily_chest"); toast(t("coinsPlus", { n: got })); }
+}
+async function purchase(id) {
+  const r = await iap.purchase(id); if (!r.ok) return;
+  track("iap_purchase", { product: id });
+  if (id === "no_ads") meta.noAds = true;
+  if (id === "starter_pack") { meta.starter.bought = true; meta.owned.tubes.push("starter"); meta.equipped.tube = "starter"; applySkin(); await addCoins(800, "starter_pack"); }
+  if (id.startsWith("coins_")) await addCoins(+id.split("_")[1], "iap");
+  await S.save(); hud();
+}
+async function restore() { const r = await iap.restore(); if (r.noAds) meta.noAds = true; await S.save(); toast(t("done")); }
+async function showOnboardingHand() {
+  if (level !== 1 || moves > 0) return;
+  onboarding = true; const { move } = await engine.hint(tubes); if (!move || !onboarding) return;
+  const hand = $("hand"); hand.hidden = false; toast(t("onboarding"));
+  const place = i => { const r = board.children[i].getBoundingClientRect(); hand.style.left = r.left + r.width / 2 - 10 + "px"; hand.style.top = r.top + r.height / 2 + "px"; };
+  let k = 0; place(move[0]); hand._timer = setInterval(() => { k++; place(move[k % 2]); }, 900);
+}
+function hideHand() { onboarding = false; const h = $("hand"); if (!h.hidden) { clearInterval(h._timer); h.hidden = true; } }
 
 async function load() {
   busy = true;
   const g = await engine.level(level, cfg.difficulty.curve ? { curve: cfg.difficulty.curve } : undefined);
   tubes = g.tubes.map(t => t.slice()); par = g.par; hiddenTubes = g.hiddenTubes || []; revealed = new Set();
   history = []; sel = -1; undos = cfg.economy.free_undos; extraUsed = false; moves = 0; hintsUsed = 0; busy = false;
-  render(true); hud();
+  render(true); hud(); updateNav();
   track("level_start", { level, colors: g.params.colors, empties: g.params.empties });
+  showOnboardingHand();
 }
 
 function hud() {
@@ -82,7 +124,7 @@ function render(full) {
 }
 
 async function tap(i) {
-  if (busy) return;
+  if (busy) return; hideHand();
   if (sel < 0) { if (tubes[i].length) { sel = i; hap.light(); audio.select(tubes[i].length); render(); } return; }
   if (sel === i) { sel = -1; render(); return; }
   const n = canPour(tubes[sel], tubes[i]);
@@ -109,8 +151,11 @@ async function win() {
   await winCascade(board, [...new Set(tubes.flat())].map(c => "c" + c));
   coins += earn + chest; streak++; levelsSinceAd++;
   track("level_complete", { level, moves, par, hints: hintsUsed, undos: cfg.economy.free_undos - undos, extra_tube: extraUsed, seconds: playSeconds });
-  level++; await S.save();
-  $("winMsg").textContent = `${moves} movimientos · referencia ${par}` + (eff ? " · bono de eficiencia" : "") + (chest ? ` · cofre de racha +${chest}` : "");
+  ensureMissions(meta, level); onLevelComplete(meta, { hints: hintsUsed, eff });
+  level++; const mapChest = mapChestReward(meta, level); coins += mapChest; await S.save();
+  if (level === 8 && !notifications.granted) notifications.request();
+  notifications.schedule({ streak, titleStreak: t("notifStreak", { n: streak }), titleChest: t("notifChest"), titleMissions: t("notifMissions") });
+  $("winMsg").textContent = t("moves", { m: moves, p: par }) + (eff ? " · " + t("effBonus") : "") + (chest ? " · " + t("streakChest", { c: chest }) : "") + (mapChest ? " · " + t("levelChest", { c: mapChest }) : "");
   $("win").classList.add("show"); $("winCoins").dataset.earn = earn;
   countUp($("winCoins"), earn, v => { if (v % 5 === 0) audio.coin(v); });
   if (chest) setTimeout(() => audio.chest(), 700);
@@ -118,7 +163,7 @@ async function win() {
 
 async function maybeInterstitial() {
   const a = cfg.ads;
-  if (level < a.interstitial_from_level || playSeconds < a.first_interstitial_min_play_seconds) return;
+  if (meta.noAds || level < a.interstitial_from_level || playSeconds < a.first_interstitial_min_play_seconds) return;
   if (levelsSinceAd < a.interstitial_every_levels || (Date.now() - lastInterstitialAt) / 1000 < a.interstitial_min_seconds) return;
   if (await ads.showInterstitial()) { lastInterstitialAt = Date.now(); levelsSinceAd = 0; track("ad_impression", { format: "interstitial", placement: "level_end" }); }
 }
@@ -126,7 +171,7 @@ async function maybeInterstitial() {
 $("bNext").onclick = async () => { $("win").classList.remove("show"); await maybeInterstitial(); hud(); load(); };
 $("bDouble").onclick = async () => {
   const r = await ads.showRewarded("double_coins");
-  if (r.rewarded) { const base = +$("winCoins").dataset.earn; coins += base; await S.save(); track("ad_reward", { placement: "double_coins" }); toast(`+${base} monedas`); audio.chest(); }
+  if (r.rewarded) { const base = +$("winCoins").dataset.earn; coins += base; await S.save(); track("ad_reward", { placement: "double_coins" }); toast(t("coinsPlus", { n: base })); audio.chest(); }
   $("win").classList.remove("show"); hud(); load();
 };
 function undo() { if (!history.length || !undos) return; tubes = history.pop(); undos--; moves--; sel = -1; hap.light(); render(); hud(); }
@@ -136,7 +181,7 @@ function restart() { if (history.length && streak) { streak = 0; track("streak_l
 $("bRestart").onclick = restart; $("bStuckRestart").onclick = restart;
 async function extraTube() {
   if (extraUsed || busy) return;
-  if (coins < cfg.economy.extra_tube_cost) { const r = await ads.showRewarded("extra_tube"); if (!r.rewarded) return toast(`Faltan monedas: ${cfg.economy.extra_tube_cost}`); track("ad_reward", { placement: "extra_tube" }); }
+  if (coins < cfg.economy.extra_tube_cost) { const r = await ads.showRewarded("extra_tube"); if (!r.rewarded) return toast(t("needCoins", { n: cfg.economy.extra_tube_cost })); track("ad_reward", { placement: "extra_tube" }); }
   else { coins -= cfg.economy.extra_tube_cost; track("coins_spend", { source: "extra_tube", amount: cfg.economy.extra_tube_cost, balance: coins }); }
   extraUsed = true; tubes = tubes.concat([[]]); history = history.map(h => h.concat([[]])); $("stuckO").classList.remove("show"); await S.save(); render(true); hud();
 }
@@ -146,12 +191,12 @@ $("bHint").onclick = async () => {
   let paid = false;
   if (coins >= cfg.economy.hint_cost) { coins -= cfg.economy.hint_cost; paid = true; }
   else if (hintAdsToday < cfg.ads.rewarded_hints_per_day) { const r = await ads.showRewarded("hint"); if (!r.rewarded) return; hintAdsToday++; }
-  else return toast(`Faltan monedas: ${cfg.economy.hint_cost}`);
+  else return toast(t("needCoins", { n: cfg.economy.hint_cost }));
   busy = true; const { move, exact } = await engine.hint(tubes); busy = false;
-  if (!move) { if (paid) coins += cfg.economy.hint_cost; return toast("Sin camino desde aquí: reinicia"); }
+  if (!move) { if (paid) coins += cfg.economy.hint_cost; return toast(t("noPath")); }
   hintsUsed++; await S.save(); hud(); track(paid ? "coins_spend" : "ad_reward", { source: "hint", exact });
   const [a, b] = move; sel = a; render(); audio.select(2);
-  board.children[b].style.outline = "3px solid var(--accent)"; setTimeout(() => board.children[b].style.outline = "", 900);
+  board.children[b].classList.add("hintTarget"); setTimeout(() => board.children[b]?.classList.remove("hintTarget"), 900);
 };
 
 // Ajustes
