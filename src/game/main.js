@@ -15,15 +15,16 @@ import { createScreens } from "./screens.js";
 import { review } from "../platform/review.js";
 import { cloud } from "../platform/cloud.js";
 import { ensureTournament, standings, levelPoints, prizeFor, coinMultiplier, weekId } from "../meta/liveops.js";
+import { livesState, nextLifeIn, loseLife, addLives, moveLimit } from "../meta/lives.js";
 
-const APP_VERSION = "0.5.0";
+const APP_VERSION = "0.6.0";
 const SYM = ["●", "▲", "■", "◆", "★", "✚", "▼", "⬟", "✖", "◐"];
 const $ = id => document.getElementById(id);
 const board = $("board");
 const engine = new Engine(globalThis.__VERTIDO_WORKER_URL || new URL("../core/worker.js", import.meta.url));
 
 let cfg, level = 1, coins = 0, streak = 0, playSeconds = 0, lastInterstitialAt = 0, levelsSinceAd = 0, hintAdsToday = 0, hintsUsed = 0;
-let tubes = [], history = [], sel = -1, undos = 3, extraUsed = false, par = 0, moves = 0, hiddenTubes = [], revealed = new Set(), busy = false;
+let tubes = [], history = [], sel = -1, undos = 3, extraUsed = false, par = 0, moves = 0, limit = 0, hiddenTubes = [], revealed = new Set(), busy = false;
 const settings = { sound: true, haptic: true, cb: false };
 let meta = defaultMeta(); let screens; let onboarding = false;
 const hap = { light: () => settings.haptic && haptics.light(), medium: () => settings.haptic && haptics.medium(), success: () => settings.haptic && haptics.success() };
@@ -98,8 +99,10 @@ function hideHand() { onboarding = false; const h = $("hand"); if (!h.hidden) { 
 
 async function load() {
   busy = true;
+  if (cfg.lives.enabled && livesState(meta, cfg.lives).n <= 0) { showNoLives(); }
   const g = await engine.level(level, cfg.difficulty.curve ? { curve: cfg.difficulty.curve } : undefined);
   tubes = g.tubes.map(t => t.slice()); par = g.par; hiddenTubes = g.hiddenTubes || []; revealed = new Set();
+  limit = cfg.moves.enabled ? moveLimit(par, level, cfg.moves) : Infinity;
   history = []; sel = -1; undos = cfg.economy.free_undos; extraUsed = false; moves = 0; hintsUsed = 0; busy = false;
   render(true); hud(); updateNav();
   track("level_start", { level, colors: g.params.colors, empties: g.params.empties });
@@ -111,6 +114,16 @@ function hud() {
   $("hintN").textContent = cfg.economy.hint_cost; $("tubeN").textContent = cfg.economy.extra_tube_cost;
   $("streak").textContent = streak >= cfg.features.streak_from_level ? "🔥" + streak : "";
   $("bUndo").disabled = !history.length || !undos; $("bTube").disabled = extraUsed;
+  const left = limit === Infinity ? "∞" : Math.max(0, limit - moves); $("movesLeft").textContent = left; $("movesLeft").parentElement.classList.toggle("low", limit !== Infinity && limit - moves <= 3);
+  $("movesLeft").parentElement.hidden = !cfg.moves.enabled; $("livesBox").hidden = !cfg.lives.enabled; if (cfg.lives.enabled) $("lives").textContent = livesState(meta, cfg.lives).n;
+}
+function showNoLives() {
+  const tick = () => { const ms = nextLifeIn(meta, cfg.lives); $("livesMsg").textContent = t("noLivesMsg", { m: Math.ceil(ms / 60000) }); if (livesState(meta, cfg.lives).n > 0) { $("livesO").classList.remove("show"); clearInterval($("livesO")._t); hud(); } };
+  $("bLifeCoins").textContent = t("refillCoins", { c: cfg.lives.refill_cost }); tick(); $("livesO").classList.add("show"); clearInterval($("livesO")._t); $("livesO")._t = setInterval(tick, 15000);
+}
+async function outOfMoves() {
+  busy = true; $("bExtraAd").textContent = t("extraMoves", { n: cfg.moves.extra_moves }); $("bExtraCoins").textContent = t("extraMovesCoins", { n: cfg.moves.extra_moves, c: cfg.moves.extra_moves_cost });
+  $("bExtraCoins").disabled = coins < cfg.moves.extra_moves_cost; $("outO").classList.add("show"); track("level_fail", { level, reason: "moves" });
 }
 
 function isHidden(ti, q) { return hiddenTubes.includes(ti) && !revealed.has(ti + ":" + q) && q < tubes[ti].length - 1; }
@@ -141,6 +154,7 @@ function render(full) {
 
 async function tap(i) {
   if (busy) return; hideHand();
+  if (cfg.lives.enabled && livesState(meta, cfg.lives).n <= 0) return showNoLives();
   if (sel < 0) { if (tubes[i].length) { sel = i; hap.light(); audio.select(tubes[i].length); render(); } return; }
   if (sel === i) { sel = -1; render(); return; }
   const n = canPour(tubes[sel], tubes[i]);
@@ -158,7 +172,14 @@ async function tap(i) {
   if (tubeDone(tubes[i])) { audio.tubeDone(tubes[i][0]); hap.success(); pulse(board.children[i]); }
   if (solved(tubes)) setTimeout(win, 300);
   else if (stuck(tubes)) { track("level_fail", { level, reason: "stuck" }); $("stuckO").classList.add("show"); }
+  else if (moves >= limit) setTimeout(outOfMoves, 250);
 }
+$("bExtraAd").onclick = async () => { const r = await ads.showRewarded("extra_moves"); if (!r.rewarded) return; track("ad_reward", { placement: "extra_moves" }); limit += cfg.moves.extra_moves; $("outO").classList.remove("show"); busy = false; hud(); };
+$("bExtraCoins").onclick = async () => { if (coins < cfg.moves.extra_moves_cost) return; await spendCoins(cfg.moves.extra_moves_cost, "extra_moves"); limit += cfg.moves.extra_moves; $("outO").classList.remove("show"); busy = false; hud(); };
+$("bGiveUp").onclick = async () => { $("outO").classList.remove("show"); busy = false; if (cfg.lives.enabled) { loseLife(meta, cfg.lives); toast(t("lifeLost")); } if (streak) { streak = 0; track("streak_lost", { level }); } await S.save(); load(); };
+$("bLifeAd").onclick = async () => { const r = await ads.showRewarded("life"); if (!r.rewarded) return; track("ad_reward", { placement: "life" }); addLives(meta, cfg.lives, 1); await S.save(); $("livesO").classList.remove("show"); clearInterval($("livesO")._t); hud(); };
+$("bLifeCoins").onclick = async () => { if (coins < cfg.lives.refill_cost) return toast(t("needCoins", { n: cfg.lives.refill_cost })); await spendCoins(cfg.lives.refill_cost, "lives"); addLives(meta, cfg.lives, cfg.lives.max); $("livesO").classList.remove("show"); clearInterval($("livesO")._t); hud(); };
+$("bLifeWait").onclick = () => { $("livesO").classList.remove("show"); };
 
 async function win() {
   const eff = moves <= par; const mult = coinMultiplier(cfg.events); const earn = (cfg.economy.coins_per_level + (eff ? cfg.economy.efficiency_bonus : 0)) * mult;
@@ -198,7 +219,7 @@ $("bDouble").onclick = async () => {
 function undo() { if (!history.length || !undos) return; tubes = history.pop(); undos--; moves--; sel = -1; hap.light(); render(); hud(); }
 $("bUndo").onclick = undo;
 $("bStuckUndo").onclick = () => { $("stuckO").classList.remove("show"); if (!undos) undos = 1; undo(); };
-function restart() { if (history.length && streak) { streak = 0; track("streak_lost", { level }); } S.save(); $("stuckO").classList.remove("show"); load(); }
+function restart() { if (history.length) { if (streak) { streak = 0; track("streak_lost", { level }); } if (cfg.lives.enabled) { loseLife(meta, cfg.lives); toast(t("lifeLost")); } } S.save(); $("stuckO").classList.remove("show"); load(); }
 $("bRestart").onclick = restart; $("bStuckRestart").onclick = restart;
 async function extraTube() {
   if (extraUsed || busy) return;

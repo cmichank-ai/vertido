@@ -10,8 +10,9 @@
 <body>
 <header>
   <div class="lvl">Nivel <span id="lvl">1</span><small id="streak"></small></div>
-  <div class="coins"><i></i><span id="coins">0</span></div>
+  <div class="hudr"><div class="lives" id="livesBox">❤️ <span id="lives">5</span></div><div class="coins"><i></i><span id="coins">0</span></div></div>
 </header>
+<div class="movesbar"><span data-i18n="movesLeft">Movimientos</span> <b id="movesLeft">0</b></div>
 <div id="board" aria-label="Tablero"></div>
 <div class="tools">
   <button class="tool" id="bUndo"><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg><b data-i18n="undo">Deshacer</b><span id="undoN">3</span></button>
@@ -37,6 +38,8 @@
 </nav>
 <div class="overlay" id="screen"><div class="card scard"><div class="shead"><h2></h2><button class="sclose" aria-label="Cerrar">✕</button></div><div class="sbody"></div></div></div>
 <div class="hand" id="hand" hidden>👆</div>
+<div class="overlay" id="outO"><div class="card"><h2 data-i18n="outOfMoves">Se acabaron los movimientos</h2><p data-i18n="outOfMovesMsg">Te faltaba poco. ¿Seguimos?</p><button class="btn" id="bExtraAd"></button><button class="btn" id="bExtraCoins"></button><button class="btn ghost" id="bGiveUp" data-i18n="giveUp">Rendirse (pierdes 1 vida)</button></div></div>
+<div class="overlay" id="livesO"><div class="card"><h2 data-i18n="noLives">Sin vidas</h2><p id="livesMsg"></p><button class="btn" id="bLifeAd" data-i18n="refillAd">+1 vida (ver anuncio)</button><button class="btn" id="bLifeCoins"></button><button class="btn ghost" id="bLifeWait" data-i18n="waitLife">Esperar</button></div></div>
 <div class="toast" id="toast"></div>
 <script type="module" src="../src/game/main.js"></script>
 </body>
