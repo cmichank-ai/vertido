@@ -9,6 +9,7 @@ export const en = {
   mSolve: "Solve {n} levels", mNoHint: "Solve {n} levels without hints", mEff: "Get {n} efficiency bonuses", claim: "Claim", claimed: "Claimed",
   missionsReset: "Reset at midnight", buy: "Buy", owned: "Owned", equipped: "Equipped", equip: "Equip", tubes: "Tubes", backgrounds: "Backgrounds",
   noAds: "No ads", starter: "Starter pack", starterMsg: "800 coins + exclusive tube. Today only.", coins: "coins",
+  events: "Event", tournament: "Weekly tournament", endsIn: "Ends in {d}d {h}h", yourRank: "Your rank: #{r} with {p} pts", prizes: "Prizes: 1st 500 · 2nd 250 · 3rd 100 · top 10: 30", claimPrize: "Claim last week's prize (#{r}: +{c})", doubleCoins: "Double weekend! Coins x{m}", tournamentPts: "+{p} tournament pts", you: "You",
   onboarding: "Tap a tube, then another to pour", notifStreak: "Your streak of {n} ends at midnight", notifChest: "Your daily chest is waiting",
   notifMissions: "New missions are ready", levelChest: "Map chest +{c}", restore: "Restore purchases",
 };

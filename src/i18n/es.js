@@ -9,6 +9,7 @@ export const es = {
   mSolve: "Resuelve {n} niveles", mNoHint: "Resuelve {n} niveles sin pista", mEff: "Logra {n} bonos de eficiencia", claim: "Reclamar", claimed: "Reclamado",
   missionsReset: "Se renuevan a medianoche", buy: "Comprar", owned: "Tuyo", equipped: "Puesto", equip: "Poner", tubes: "Frascos", backgrounds: "Fondos",
   noAds: "Sin anuncios", starter: "Pack de inicio", starterMsg: "800 monedas + frasco exclusivo. Solo hoy.", coins: "monedas",
+  events: "Evento", tournament: "Torneo semanal", endsIn: "Termina en {d}d {h}h", yourRank: "Tu lugar: #{r} con {p} pts", prizes: "Premios: 1.º 500 · 2.º 250 · 3.º 100 · top 10: 30", claimPrize: "Reclamar premio de la semana pasada (#{r}: +{c})", doubleCoins: "¡Fin de semana doble! Monedas x{m}", tournamentPts: "+{p} pts de torneo", you: "Tú",
   onboarding: "Toca un frasco y luego otro para verter", notifStreak: "Tu racha de {n} se pierde a medianoche", notifChest: "Tu cofre diario te espera",
   notifMissions: "Misiones nuevas listas", levelChest: "Cofre del mapa +{c}", restore: "Restaurar compras",
 };
