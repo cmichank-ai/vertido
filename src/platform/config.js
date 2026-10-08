@@ -15,6 +15,8 @@ export const DEFAULTS = {
     ids: null, // { android: {rewarded, interstitial, banner}, ios: {...} } — IDs reales solo por config del build de tienda
   },
   iap: { keys: null }, // { ios: "appl_...", android: "goog_..." }
+  backend: { supabase_url: null, anon_key: null },
+  tournament: { prizes: [500, 250, 100], top10: 30 },
   features: { missions_from_level: 6, shop_from_level: 16, events_from_level: 24, streak_from_level: 3 },
   difficulty: { curve: null }, // null = DEFAULT_CURVE del generador
   events: [],

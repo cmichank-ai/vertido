@@ -13,8 +13,10 @@ import { t, detectLang, applyI18n } from "../i18n/i18n.js";
 import { defaultMeta, ensureMissions, onLevelComplete, openDaily, mapChestReward } from "../meta/meta.js";
 import { createScreens } from "./screens.js";
 import { review } from "../platform/review.js";
+import { cloud } from "../platform/cloud.js";
+import { ensureTournament, standings, levelPoints, prizeFor, coinMultiplier, weekId } from "../meta/liveops.js";
 
-const APP_VERSION = "0.4.0";
+const APP_VERSION = "0.5.0";
 const SYM = ["●", "▲", "■", "◆", "★", "✚", "▼", "⬟", "✖", "◐"];
 const $ = id => document.getElementById(id);
 const board = $("board");
@@ -44,6 +46,9 @@ async function boot() {
   cfg = await loadConfig(storage, { version: APP_VERSION, country: navigator.language?.split("-")[1], bucket: 0 });
   ads.configure(cfg.ads.ids); await ads.init(); await iap.init(cfg.iap?.keys);
   const r0 = await iap.restore(); if (r0.noAds) meta.noAds = true;
+  await cloud.init({ ...cfg.backend, app_version: APP_VERSION });
+  const remote = await cloud.pull(); if (remote && remote.level > level) { level = remote.level; coins = Math.max(coins, remote.coins); streak = remote.streak; await S.save(); }
+  closeTournamentWeek();
   setInterval(() => { if (!document.hidden) playSeconds++; }, 1000);
   document.addEventListener("pointerdown", () => audio.unlock(), { once: true });
   screens = createScreens({ get meta() { return meta; }, get state() { return { level, coins }; }, get cfg() { return cfg; }, addCoins, spendCoins, toast, applySkin, purchase, restore, openDaily: openDailyChest });
@@ -52,8 +57,17 @@ async function boot() {
   if (level >= cfg.features.missions_from_level && screens.dailyAvailable()) screens.show("daily");
 }
 
+function closeTournamentWeek() {
+  const before = meta.tournament?.week; const tt = ensureTournament(meta);
+  if (tt.prev && !tt.prev.claimed && tt.prev.rank == null) { // la semana cerró: calcular lugar final con los rivales de esa semana
+    const rows = standings({ tournament: { week: tt.prev.week, points: tt.prev.points } }, new Date()); const me = rows.find(r => r.me);
+    tt.prev.rank = me.rank; tt.prev.prize = prizeFor(me.rank, cfg.tournament.prizes);
+  }
+  if (before !== tt.week) $("dotE").hidden = !(tt.prev && !tt.prev.claimed && tt.prev.prize > 0);
+}
 function updateNav() {
   const nav = $("nav"); nav.hidden = level < cfg.features.missions_from_level; $("navShop").hidden = level < cfg.features.shop_from_level;
+  $("navEvents").hidden = level < cfg.features.events_from_level;
   if (!nav.hidden) { const items = ensureMissions(meta, level); $("dotM").hidden = !items.some(m => !m.claimed && m.p >= m.n); }
 }
 function applySkin() { document.body.dataset.tube = meta.equipped.tube; document.body.dataset.bg = meta.equipped.bg; }
@@ -147,19 +161,21 @@ async function tap(i) {
 }
 
 async function win() {
-  const eff = moves <= par; const earn = cfg.economy.coins_per_level + (eff ? cfg.economy.efficiency_bonus : 0);
+  const eff = moves <= par; const mult = coinMultiplier(cfg.events); const earn = (cfg.economy.coins_per_level + (eff ? cfg.economy.efficiency_bonus : 0)) * mult;
   const chest = cfg.economy.streak_chests[streak + 1] || 0;
   audio.win();
   await winCascade(board, [...new Set(tubes.flat())].map(c => "c" + c));
   coins += earn + chest; streak++; levelsSinceAd++;
   track("level_complete", { level, moves, par, hints: hintsUsed, undos: cfg.economy.free_undos - undos, extra_tube: extraUsed, seconds: playSeconds });
   ensureMissions(meta, level); onLevelComplete(meta, { hints: hintsUsed, eff });
+  let tpts = 0; if (level >= cfg.features.events_from_level) { const tt = ensureTournament(meta); tpts = levelPoints({ level, eff, hard: level >= 20 && level % 7 === 0 }); tt.points += tpts; cloud.submitScore(tt.week, tt.points); }
   level++; const mapChest = mapChestReward(meta, level); coins += mapChest; await S.save();
+  cloud.push({ level, coins, streak, unlocked_items: meta.owned });
   if (level === 8 && !notifications.granted) notifications.request();
   if ((level === 15 || (level > 15 && (level - 15) % 25 === 0)) && (meta.reviews || 0) < 3) { meta.reviews = (meta.reviews || 0) + 1; review.request(); }
   if (!meta.noAds && level >= cfg.ads.banner_from_level) ads.showBanner();
   notifications.schedule({ streak, titleStreak: t("notifStreak", { n: streak }), titleChest: t("notifChest"), titleMissions: t("notifMissions") });
-  $("winMsg").textContent = t("moves", { m: moves, p: par }) + (eff ? " · " + t("effBonus") : "") + (chest ? " · " + t("streakChest", { c: chest }) : "") + (mapChest ? " · " + t("levelChest", { c: mapChest }) : "");
+  $("winMsg").textContent = t("moves", { m: moves, p: par }) + (eff ? " · " + t("effBonus") : "") + (chest ? " · " + t("streakChest", { c: chest }) : "") + (mapChest ? " · " + t("levelChest", { c: mapChest }) : "") + (tpts ? " · " + t("tournamentPts", { p: tpts }) : "") + (mult > 1 ? " · " + t("doubleCoins", { m: mult }) : "");
   $("win").classList.add("show"); $("winCoins").dataset.earn = earn;
   countUp($("winCoins"), earn, v => { if (v % 5 === 0) audio.coin(v); });
   if (chest) setTimeout(() => audio.chest(), 700);

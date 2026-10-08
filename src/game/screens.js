@@ -2,6 +2,7 @@
 import { t } from "../i18n/i18n.js";
 import { TUBE_STYLES, BACKGROUNDS, ensureMissions, claimMission, buyItem, equip, dailyAvailable, starterActive } from "../meta/meta.js";
 import { CATALOG } from "../platform/iap.js";
+import { standings, ensureTournament, weekEndsAt, prizeFor } from "../meta/liveops.js";
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[c]));
 
@@ -52,6 +53,17 @@ export function createScreens(ctx) {
         `<button class="btn ghost" id="bRestore">${t("restore")}</button>`;
       body.querySelectorAll("[data-buy]").forEach(b => b.onclick = async () => { await ctx.purchase(b.dataset.buy); render("shop"); });
       body.querySelector("#bRestore").onclick = () => ctx.restore();
+    }
+    if (name === "events") {
+      title.textContent = t("tournament"); const tt = ensureTournament(meta);
+      const rows = standings(meta); const me = rows.find(r => r.me); const left = weekEndsAt() - Date.now();
+      const prev = tt.prev && !tt.prev.claimed ? tt.prev : null;
+      const top = rows.slice(0, 10); if (me.rank > 10) top.push(me);
+      body.innerHTML = `<p class="dim">${t("endsIn", { d: Math.floor(left / 86400000), h: Math.floor((left % 86400000) / 3600000) })} · ${t("prizes")}</p>
+        ${prev ? `<button class="btn" id="bPrize">${t("claimPrize", { r: prev.rank || "?", c: prev.prize || 0 })}</button>` : ""}
+        <div class="lb">${top.map(r => `<div class="lrow ${r.me ? "me" : ""}"><b>#${r.rank}</b><span>${r.me ? t("you") : esc(r.name)}</span><i>${r.points}</i></div>`).join("")}</div>
+        <p>${t("yourRank", { r: me.rank, p: me.points })}</p>`;
+      const bp = body.querySelector("#bPrize"); if (bp) bp.onclick = () => { tt.prev.claimed = true; ctx.addCoins(tt.prev.prize || 0, "tournament"); render("events"); };
     }
     if (name === "daily") {
       title.textContent = t("dailyChest");
