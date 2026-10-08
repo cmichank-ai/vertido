@@ -158,3 +158,9 @@ body[data-bg="night"]{background:radial-gradient(120% 80% at 50% 0%,#0b1a3a,#020
 .swatch.bg-indigo{background:#171c47}.swatch.bg-plum{background:#4a1942}.swatch.bg-forest{background:#1c4a3a}.swatch.bg-sunset{background:#7a2e4a}.swatch.bg-slate{background:#3a4455}.swatch.bg-night{background:#0b1a3a}
 .tool b{font-weight:800}
 .tube.hintTarget{outline:3px solid var(--accent);outline-offset:2px}
+
+/* torneo */
+.lb{display:flex;flex-direction:column;gap:4px;margin:10px 0}
+.lrow{display:grid;grid-template-columns:40px 1fr auto;align-items:center;padding:8px 10px;border-radius:10px;background:var(--glass)}
+.lrow.me{background:var(--accent);color:#1c1f4a}
+.lrow i{font-style:normal;font-weight:900}
