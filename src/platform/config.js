@@ -17,6 +17,8 @@ export const DEFAULTS = {
   iap: { keys: null }, // { ios: "appl_...", android: "goog_..." }
   backend: { supabase_url: null, anon_key: null },
   tournament: { prizes: [500, 250, 100], top10: 30 },
+  lives: { enabled: true, max: 5, regen_minutes: 30, refill_cost: 90 },
+  moves: { enabled: true, slack_early: 6, slack_mid: 3, slack_late: 1, extra_moves: 5, extra_moves_cost: 30 },
   features: { missions_from_level: 6, shop_from_level: 16, events_from_level: 24, streak_from_level: 3 },
   difficulty: { curve: null }, // null = DEFAULT_CURVE del generador
   events: [],

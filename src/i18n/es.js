@@ -10,6 +10,7 @@ export const es = {
   missionsReset: "Se renuevan a medianoche", buy: "Comprar", owned: "Tuyo", equipped: "Puesto", equip: "Poner", tubes: "Frascos", backgrounds: "Fondos",
   noAds: "Sin anuncios", starter: "Pack de inicio", starterMsg: "800 monedas + frasco exclusivo. Solo hoy.", coins: "monedas",
   events: "Evento", tournament: "Torneo semanal", endsIn: "Termina en {d}d {h}h", yourRank: "Tu lugar: #{r} con {p} pts", prizes: "Premios: 1.º 500 · 2.º 250 · 3.º 100 · top 10: 30", claimPrize: "Reclamar premio de la semana pasada (#{r}: +{c})", doubleCoins: "¡Fin de semana doble! Monedas x{m}", tournamentPts: "+{p} pts de torneo", you: "Tú",
+  movesLeft: "Movimientos", outOfMoves: "Se acabaron los movimientos", outOfMovesMsg: "Te faltaba poco. ¿Seguimos?", extraMoves: "+{n} movimientos (ver anuncio)", extraMovesCoins: "+{n} movimientos por {c} monedas", giveUp: "Rendirse (pierdes 1 vida)", noLives: "Sin vidas", noLivesMsg: "Próxima vida en {m} min", refillAd: "+1 vida (ver anuncio)", refillCoins: "Llenar vidas por {c} monedas", waitLife: "Esperar", lifeLost: "Vida perdida",
   onboarding: "Toca un frasco y luego otro para verter", notifStreak: "Tu racha de {n} se pierde a medianoche", notifChest: "Tu cofre diario te espera",
   notifMissions: "Misiones nuevas listas", levelChest: "Cofre del mapa +{c}", restore: "Restaurar compras",
 };
